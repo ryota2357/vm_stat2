@@ -120,7 +120,7 @@ void snapshot() {
     auto mem_cached_bytes = mem_data.cached_pages * page_size;
 
     char buf[32];
-    printf("--- Mach Virtual Memory Statistics 2 ---\n");
+    puts("--- Mach Virtual Memory Statistics 2 ---");
     puts_2col(35, "Total Memory:",   "%s         ", HUMANIZE_BYTES(total_memory, buf));
     puts_2col(35, "Used Memory:",    "%s  (%4.1lf%%)", HUMANIZE_BYTES(mem_used_bytes, buf), (mem_used_bytes * 100.0) / total_memory);
     puts_2col(35, "  App Memory:",   "%s  (%4.1lf%%)", HUMANIZE_BYTES(mem_app_bytes, buf), (mem_app_bytes * 100.0) / total_memory);
@@ -128,7 +128,7 @@ void snapshot() {
     puts_2col(35, "  Compressed",    "%s  (%4.1lf%%)", HUMANIZE_BYTES(mem_compressed_bytes, buf), (mem_compressed_bytes * 100.0) / total_memory);
     puts_2col(35, "Cached Files:",   "%s  (%4.1lf%%)", HUMANIZE_BYTES(mem_cached_bytes, buf), (mem_cached_bytes * 100.0) / total_memory);
     puts_2col(35, "Swap Used:",      "%s         ",  HUMANIZE_BYTES(swap_used, buf));
-    printf("-----------------------------------------\n");
+    puts("-----------------------------------------");
     puts_2col(40, "Pages free:",                   HUMANIZE_BYTES((uint64_t)vm_stat.free_count * page_size, buf));
     puts_2col(40, "Pages active:",                 HUMANIZE_BYTES((uint64_t)vm_stat.active_count * page_size, buf));
     puts_2col(40, "Pages inactive:",               HUMANIZE_BYTES((uint64_t)vm_stat.inactive_count * page_size, buf));
