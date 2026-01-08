@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mach/mach.h>
-#include <mach/mach_host.h>
 #include <sys/sysctl.h>
 
 vm_size_t get_page_size(host_t host_port) {
