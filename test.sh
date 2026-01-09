@@ -114,6 +114,10 @@ group "Error Cases"
   test_success "Interval 0 (treated as snapshot, like vm_stat)" 0
   test_success "Non-numeric interval (treated as 0, like vm_stat)" abc
 
+  test_failure "Negative interval argument (treated as invalid option)" -1
+  test_failure "Negative interval with separator (-- -1)" -- -1
+  test_stderr_contains "Error for -- -1" "must be non-negative" -- -1
+
 group "Combined Options"
   test_success "Combined: -b -a" -b -a
   test_success "Combined: -m -c 1 1" -m -c 1 1
