@@ -331,6 +331,62 @@ void snapshot(const Config* cfg) {
     */
 }
 
+void polling_loop(const Config* cfg) {
+    auto host_port = mach_host_self();
+    auto page_size = get_page_size(host_port);
+
+    printf("%10s %10s %10s %10s %10s %10s %10s %10s\n",
+           "Free", "App", "Wired", "Compr", "Cache", "Swap", "In/s", "Out/s");
+
+    vm_statistics64_data_t prev_stat = {0};
+    int iteration = 0;
+
+    while (cfg->count < 0 || iteration < cfg->count) {
+        auto vm_stat = get_vm_statistics64(host_port);
+        auto swap_used = get_swap_used();
+        auto mem_data = calc_memory_data(vm_stat);
+
+        uint64_t free_bytes = (uint64_t)vm_stat.free_count * page_size;
+        uint64_t app_bytes = mem_data.app_pages * page_size;
+        uint64_t wired_bytes = mem_data.wired_pages * page_size;
+        uint64_t compr_bytes = mem_data.compressed_pages * page_size;
+        uint64_t cache_bytes = mem_data.cached_pages * page_size;
+
+        char free_buf[32], app_buf[32], wired_buf[32], compr_buf[32], cache_buf[32], swap_buf[32];
+        format_bytes(free_bytes, cfg->unit_mode, free_buf, sizeof(free_buf));
+        format_bytes(app_bytes, cfg->unit_mode, app_buf, sizeof(app_buf));
+        format_bytes(wired_bytes, cfg->unit_mode, wired_buf, sizeof(wired_buf));
+        format_bytes(compr_bytes, cfg->unit_mode, compr_buf, sizeof(compr_buf));
+        format_bytes(cache_bytes, cfg->unit_mode, cache_buf, sizeof(cache_buf));
+        format_bytes(swap_used, cfg->unit_mode, swap_buf, sizeof(swap_buf));
+
+        char in_buf[32], out_buf[32];
+        if (iteration == 0) {
+            snprintf(in_buf, sizeof(in_buf), "-");
+            snprintf(out_buf, sizeof(out_buf), "-");
+        } else {
+            uint64_t pageins_diff = vm_stat.pageins - prev_stat.pageins;
+            uint64_t pageouts_diff = vm_stat.pageouts - prev_stat.pageouts;
+            uint64_t in_bytes_per_sec = (pageins_diff * page_size) / cfg->interval;
+            uint64_t out_bytes_per_sec = (pageouts_diff * page_size) / cfg->interval;
+            format_bytes(in_bytes_per_sec, cfg->unit_mode, in_buf, sizeof(in_buf));
+            format_bytes(out_bytes_per_sec, cfg->unit_mode, out_buf, sizeof(out_buf));
+        }
+
+        printf("%10s %10s %10s %10s %10s %10s %10s %10s\n",
+               free_buf, app_buf, wired_buf, compr_buf, cache_buf, swap_buf, in_buf, out_buf);
+        fflush(stdout);
+
+        prev_stat = vm_stat;
+        iteration += 1;
+
+        if (cfg->count >= 0 && iteration >= cfg->count) {
+            break;
+        }
+        sleep(cfg->interval);
+    }
+}
+
 void debug_print_config(const Config* cfg) {
     char* unit_mode_str;
     switch (cfg->unit_mode) {
@@ -351,12 +407,13 @@ void debug_print_config(const Config* cfg) {
 
 int main(int argc, char* argv[]) {
     Config cfg = parse_args(argc, argv);
-
 #ifndef NDEBUG
     debug_print_config(&cfg);
 #endif
-
-    snapshot(&cfg);
-
+    if (cfg.interval == 0) {
+        snapshot(&cfg);
+    } else {
+        polling_loop(&cfg);
+    }
     return 0;
 }
