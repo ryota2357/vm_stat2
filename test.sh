@@ -55,6 +55,19 @@ test_output_contains() {
     fi
 }
 
+test_output_matches_regex() {
+    local desc="$1"
+    local regex="$2"
+    shift 2
+    local output
+    output=$("$VM_STAT2" "$@" 2>&1) || true
+    if echo "$output" | grep -Eq "$regex"; then
+        pass "$desc"
+    else
+        fail "$desc" "output matches regex: $regex" "output: $output"
+    fi
+}
+
 test_stderr_contains() {
     local desc="$1"
     local expected="$2"
@@ -92,6 +105,24 @@ group "Unit Options"
 group "All Details Option"
   test_success "All details option -a" -a
   test_output_contains "-a shows Pages free" "Pages free" -a
+
+group "All Details Formatting (-a)"
+  # vm_stat man: these 3 are counters (not bytes)
+  test_output_matches_regex "-a: Translation faults is raw count" '^\"Translation faults\":[[:space:]]+[0-9]+$' -a
+  test_output_matches_regex "-a: Pages copy-on-write is raw count" '^Pages copy-on-write:[[:space:]]+[0-9]+$' -a
+  test_output_matches_regex "-a: Pages zero filled is raw count" '^Pages zero filled:[[:space:]]+[0-9]+$' -a
+
+  output=$("$VM_STAT2" -a 2>&1) || true
+  details=$(echo "$output" | awk 'f{print} /^Swap Used:/{f=1}')
+  other_details=$(echo "$details" | grep -vE '^("Translation faults"|Pages copy-on-write|Pages zero filled):' || true)
+
+  case_name="-a: other detail lines use unit format"
+  mismatches=$(echo "$other_details" | grep -Ev "^.+:[[:space:]]+[0-9]+\.[0-9]{2} (B|KB|MB|GB|TB)$" || true)
+  if [ -z "$mismatches" ]; then
+    pass "$case_name"
+  else
+    fail "$case_name" "all lines match unit format" "mismatches: $mismatches"
+  fi
 
 group "Polling Mode Tests"
   test_success "Polling mode with interval" -c 1 1

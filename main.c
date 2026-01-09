@@ -233,9 +233,9 @@ void puts_vm_statistics64_as_table(vm_statistics64_data_t vm_stat, vm_size_t pag
         (uint64_t)vm_stat.throttled_count * page_size,
         (uint64_t)vm_stat.wire_count * page_size,
         (uint64_t)vm_stat.purgeable_count * page_size,
-        (uint64_t)vm_stat.faults * page_size,
-        (uint64_t)vm_stat.cow_faults * page_size,
-        (uint64_t)vm_stat.zero_fill_count * page_size,
+        (uint64_t)vm_stat.faults,
+        (uint64_t)vm_stat.cow_faults,
+        (uint64_t)vm_stat.zero_fill_count,
         (uint64_t)vm_stat.reactivations * page_size,
         (uint64_t)vm_stat.purges * page_size,
         (uint64_t)vm_stat.external_page_count * page_size,
@@ -276,7 +276,11 @@ void puts_vm_statistics64_as_table(vm_statistics64_data_t vm_stat, vm_size_t pag
 
     char bytes_vals[NUM_STATS][32] = {0};
     for (int i = 0; i < NUM_STATS; i++) {
-        format_bytes(bytes_nums[i], unit_mode, bytes_vals[i], sizeof(bytes_vals[i]));
+        if (i == 7 || i == 8 || i == 9) {
+            snprintf(bytes_vals[i], sizeof(bytes_vals[i]), "%llu", (unsigned long long)bytes_nums[i]);
+        } else {
+            format_bytes(bytes_nums[i], unit_mode, bytes_vals[i], sizeof(bytes_vals[i]));
+        }
     }
 
     int max_val_len = 0;
