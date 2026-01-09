@@ -126,14 +126,15 @@ uint64_t get_swap_used() {
     return vmusage.xsu_used;
 }
 
-struct vm_stat2_mem_data {
+typedef struct {
     uint64_t app_pages;
     uint64_t wired_pages;
     uint64_t compressed_pages;
     uint64_t cached_pages;
     int64_t swap_pages;
-};
-struct vm_stat2_mem_data calc_vm_stat2_mem_data(vm_statistics64_data_t vm_stat) {
+} MemoryData;
+
+MemoryData calc_memory_data(vm_statistics64_data_t vm_stat) {
     auto active = vm_stat.active_count;
     auto inactive = vm_stat.inactive_count;
     auto speculative = vm_stat.speculative_count;
@@ -144,7 +145,7 @@ struct vm_stat2_mem_data calc_vm_stat2_mem_data(vm_statistics64_data_t vm_stat) 
     auto compressor = vm_stat.compressor_page_count;
     auto swapins = vm_stat.swapins;
     auto swapouts = vm_stat.swapouts;
-    return (struct vm_stat2_mem_data){
+    return (MemoryData){
         .app_pages = active + inactive + speculative + throttled - purgeable - file_backed,
         .wired_pages = wired,
         .compressed_pages = compressor,
@@ -194,7 +195,7 @@ void snapshot() {
     auto total_memory = get_total_memory();
     auto swap_used = get_swap_used();
 
-    auto mem_data = calc_vm_stat2_mem_data(vm_stat);
+    auto mem_data = calc_memory_data(vm_stat);
 
     auto mem_app_bytes = mem_data.app_pages * page_size;
     auto mem_wired_bytes = mem_data.wired_pages * page_size;
