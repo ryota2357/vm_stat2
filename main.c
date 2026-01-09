@@ -218,7 +218,7 @@ void puts_memory_data_as_table(MemoryData mem_data, uint64_t total_memory, uint6
     printf("Used Memory:    %*s %s  (%4.1lf%%)\n", max_val_len - (int)strlen(bytes_vals[1]), "", bytes_vals[1], (mem_used_bytes * 100.0) / total_memory);
     printf("  App Memory:   %*s %s  (%4.1lf%%)\n", max_val_len - (int)strlen(bytes_vals[2]), "", bytes_vals[2], (mem_app_bytes * 100.0) / total_memory);
     printf("  Wired Memory: %*s %s  (%4.1lf%%)\n", max_val_len - (int)strlen(bytes_vals[3]), "", bytes_vals[3], (mem_wired_bytes * 100.0) / total_memory);
-    printf("  Compressed    %*s %s  (%4.1lf%%)\n", max_val_len - (int)strlen(bytes_vals[4]), "", bytes_vals[4], (mem_compressed_bytes * 100.0) / total_memory);
+    printf("  Compressed:   %*s %s  (%4.1lf%%)\n", max_val_len - (int)strlen(bytes_vals[4]), "", bytes_vals[4], (mem_compressed_bytes * 100.0) / total_memory);
     printf("Cached Files:   %*s %s  (%4.1lf%%)\n", max_val_len - (int)strlen(bytes_vals[5]), "", bytes_vals[5], (mem_cached_bytes * 100.0) / total_memory);
     printf("Swap Used:      %*s %s\n",             max_val_len - (int)strlen(bytes_vals[6]), "", bytes_vals[6]);
 }

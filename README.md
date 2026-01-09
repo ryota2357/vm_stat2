@@ -62,7 +62,7 @@ Total Memory:    32.00 GB
 Used Memory:     19.70 GB  (61.6%)
   App Memory:    13.69 GB  (42.8%)
   Wired Memory:   3.48 GB  (10.9%)
-  Compressed      2.53 GB  ( 7.9%)
+  Compressed:     2.53 GB  ( 7.9%)
 Cached Files:     9.08 GB  (28.4%)
 Swap Used:         0.00 B
 ```
