@@ -353,8 +353,12 @@ void polling_loop(const Config* cfg) {
     auto host_port = mach_host_self();
     auto page_size = get_page_size(host_port);
 
+    char page_size_buf[32];
+    format_bytes(page_size, cfg->unit_mode, page_size_buf, sizeof(page_size_buf));
+    printf("Mach Virtual Memory Statistics 2: (page size: %s)\n", page_size_buf);
+
     printf("%10s %10s %10s %10s %10s %10s %10s %10s\n",
-           "Free", "App", "Wired", "Compr", "Cache", "Swap", "In/s", "Out/s");
+           "Free", "App", "Wired", "Cmprssed", "Cache", "Swap", "PageIn/s", "PageOut/s");
 
     vm_statistics64_data_t prev_stat = {0};
     int iteration = 0;
