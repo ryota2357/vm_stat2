@@ -76,17 +76,6 @@ Config parse_args(int argc, char* argv[]) {
     return cfg;
 }
 
-const char* unit_mode_to_string(UnitMode mode) {
-    switch (mode) {
-        case UNIT_AUTO: return "Auto";
-        case UNIT_BYTE: return "Byte";
-        case UNIT_KB:   return "KB";
-        case UNIT_MB:   return "MB";
-        case UNIT_GB:   return "GB";
-        default:        return "Unknown";
-    }
-}
-
 vm_size_t get_page_size(host_t host_port) {
     vm_size_t page_size;
     if (host_page_size(host_port, &page_size) != KERN_SUCCESS) {
@@ -262,8 +251,17 @@ void snapshot() {
 }
 
 void debug_print_config(const Config* cfg) {
+    char* unit_mode_str;
+    switch (cfg->unit_mode) {
+        case UNIT_AUTO: unit_mode_str = "AUTO"; break;
+        case UNIT_BYTE: unit_mode_str = "BYTE"; break;
+        case UNIT_KB:   unit_mode_str = "KB";   break;
+        case UNIT_MB:   unit_mode_str = "MB";   break;
+        case UNIT_GB:   unit_mode_str = "GB";   break;
+        default:        unit_mode_str = "UNKNOWN"; break;
+    }
     printf("[DEBUG] Config:\n");
-    printf("  unit_mode:   %s\n", unit_mode_to_string(cfg->unit_mode));
+    printf("  unit_mode:   %s\n", unit_mode_str);
     printf("  interval:    %d\n", cfg->interval);
     printf("  count:       %d\n", cfg->count);
     printf("  show_all:    %s\n", cfg->show_all ? "true" : "false");
