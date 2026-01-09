@@ -11,13 +11,29 @@ A simple macOS command-line tool to display virtual memory statistics in a human
 
 ## Installation
 
+### Build from source
+
 Build the project using Make:
 
 ```bash
 make
 ```
 
-The binary will be created at `build/vm_stat2`.
+The binary will be created at `build/vm_stat2`. You can move it to a directory in your `PATH` (e.g., `/usr/local/bin/`) to use it from anywhere.
+
+### Using Nix
+
+Install with Nix:
+
+```bash
+nix profile add github:ryota2357/vm_stat2
+```
+
+Or run directly without installing:
+
+```bash
+nix run github:ryota2357/vm_stat2
+```
 
 ## Usage
 
