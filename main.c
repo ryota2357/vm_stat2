@@ -143,40 +143,151 @@ MemoryData calc_memory_data(vm_statistics64_data_t vm_stat) {
     };
 }
 
-bool humanize_bytes(uint64_t bytes, char* buf, size_t bufsize) {
-    const char* units[] = {"B", "KB", "MB", "GB", "TB"};
-    int i = 0;
-    double size = (double)bytes;
-    while (size >= 1024 && i < 4) {
-        size /= 1024;
-        i += 1;
+bool format_bytes(uint64_t bytes, UnitMode mode, char* buf, size_t bufsize) {
+    int written;
+    switch (mode) {
+        case UNIT_AUTO: {
+            const char* units[] = {"B", "KB", "MB", "GB", "TB"};
+            int i = 0;
+            double size = (double)bytes;
+            while (size >= 1024.0 && i < 4) {
+                size /= 1024.0;
+                i += 1;
+            }
+            written = snprintf(buf, bufsize, "%.2f %s", size, units[i]);
+            break;
+        }
+        case UNIT_BYTE:
+            written = snprintf(buf, bufsize, "%llu B", (unsigned long long)bytes);
+            break;
+        case UNIT_KB:
+            written = snprintf(buf, bufsize, "%.2f KB", (double)bytes / 1024.0);
+            break;
+        case UNIT_MB:
+            written = snprintf(buf, bufsize, "%.2f MB", (double)bytes / (1024.0 * 1024.0));
+            break;
+        case UNIT_GB:
+            written = snprintf(buf, bufsize, "%.2f GB", (double)bytes / (1024.0 * 1024.0 * 1024.0));
+            break;
+        default:
+            written = snprintf(buf, bufsize, "N/A");
+            break;
     }
-    auto written = snprintf(buf, bufsize, "%6.2f %s", size, units[i]);
     return written > 0 && (size_t)written < bufsize;
 }
-#define HUMANIZE_BYTES(bytes, buf) ( humanize_bytes(bytes, buf, sizeof(buf)) ? buf : "N/A" )
 
-void puts_2col(int width, const char* left, const char* fmt_right, ...) {
-    va_list args;
-
-    int left_len = (int)strlen(left);
-    va_start(args, fmt_right);
-    int right_len = vsnprintf(NULL, 0, fmt_right, args);
-    va_end(args);
-    int spaces = width - left_len - right_len;
-    if (spaces < 1) spaces = 1;
-
-    fputs(left, stdout);
-    for (int i = 0; i < spaces; i++) {
-        putchar(' ');
+void chmax(int* a, int b) {
+    if (*a < b) {
+        *a = b;
     }
-    va_start(args, fmt_right);
-    vprintf(fmt_right, args);
-    va_end(args);
-    putchar('\n');
 }
 
-void snapshot() {
+void puts_memory_data_as_table(MemoryData mem_data, uint64_t total_memory, uint64_t swap_used, vm_size_t page_size, UnitMode unit_mode) {
+    auto mem_app_bytes = mem_data.app_pages * page_size;
+    auto mem_wired_bytes = mem_data.wired_pages * page_size;
+    auto mem_compressed_bytes = mem_data.compressed_pages * page_size;
+    auto mem_used_bytes = mem_app_bytes + mem_wired_bytes + mem_compressed_bytes;
+    auto mem_cached_bytes = mem_data.cached_pages * page_size;
+
+    char bytes_vals[7][32] = {0};
+    uint64_t bytes_nums[7] = { total_memory, mem_used_bytes, mem_app_bytes, mem_wired_bytes, mem_compressed_bytes, mem_cached_bytes, swap_used };
+    for (int i = 0; i < 7; i++) {
+        format_bytes(bytes_nums[i], unit_mode, bytes_vals[i], sizeof(bytes_vals[i]));
+    }
+
+    int max_val_len = 0;
+    for (int i = 0; i < 7; i++) {
+        chmax(&max_val_len, (int)strlen(bytes_vals[i]));
+    }
+
+    printf("Total Memory:   %*s %s\n",             max_val_len - (int)strlen(bytes_vals[0]), "", bytes_vals[0]);
+    printf("Used Memory:    %*s %s  (%4.1lf%%)\n", max_val_len - (int)strlen(bytes_vals[1]), "", bytes_vals[1], (mem_used_bytes * 100.0) / total_memory);
+    printf("  App Memory:   %*s %s  (%4.1lf%%)\n", max_val_len - (int)strlen(bytes_vals[2]), "", bytes_vals[2], (mem_app_bytes * 100.0) / total_memory);
+    printf("  Wired Memory: %*s %s  (%4.1lf%%)\n", max_val_len - (int)strlen(bytes_vals[3]), "", bytes_vals[3], (mem_wired_bytes * 100.0) / total_memory);
+    printf("  Compressed    %*s %s  (%4.1lf%%)\n", max_val_len - (int)strlen(bytes_vals[4]), "", bytes_vals[4], (mem_compressed_bytes * 100.0) / total_memory);
+    printf("Cached Files:   %*s %s  (%4.1lf%%)\n", max_val_len - (int)strlen(bytes_vals[5]), "", bytes_vals[5], (mem_cached_bytes * 100.0) / total_memory);
+    printf("Swap Used:      %*s %s\n",             max_val_len - (int)strlen(bytes_vals[6]), "", bytes_vals[6]);
+}
+
+void puts_vm_statistics64_as_table(vm_statistics64_data_t vm_stat, vm_size_t page_size, UnitMode unit_mode) {
+    #define NUM_STATS 22
+    uint64_t bytes_nums[NUM_STATS] = {
+        (uint64_t)vm_stat.free_count * page_size,
+        (uint64_t)vm_stat.active_count * page_size,
+        (uint64_t)vm_stat.inactive_count * page_size,
+        (uint64_t)vm_stat.speculative_count * page_size,
+        (uint64_t)vm_stat.throttled_count * page_size,
+        (uint64_t)vm_stat.wire_count * page_size,
+        (uint64_t)vm_stat.purgeable_count * page_size,
+        (uint64_t)vm_stat.faults * page_size,
+        (uint64_t)vm_stat.cow_faults * page_size,
+        (uint64_t)vm_stat.zero_fill_count * page_size,
+        (uint64_t)vm_stat.reactivations * page_size,
+        (uint64_t)vm_stat.purges * page_size,
+        (uint64_t)vm_stat.external_page_count * page_size,
+        (uint64_t)vm_stat.internal_page_count * page_size,
+        (uint64_t)vm_stat.total_uncompressed_pages_in_compressor * page_size,
+        (uint64_t)vm_stat.compressor_page_count * page_size,
+        (uint64_t)vm_stat.decompressions * page_size,
+        (uint64_t)vm_stat.compressions * page_size,
+        (uint64_t)vm_stat.pageins * page_size,
+        (uint64_t)vm_stat.pageouts * page_size,
+        (uint64_t)vm_stat.swapins * page_size,
+        (uint64_t)vm_stat.swapouts * page_size,
+    };
+    const char* labels[NUM_STATS] = {
+        "Pages free:",
+        "Pages active:",
+        "Pages inactive:",
+        "Pages speculative:",
+        "Pages throttled:",
+        "Pages wired down:",
+        "Pages purgeable:",
+        "\"Translation faults\":",
+        "Pages copy-on-write:",
+        "Pages zero filled:",
+        "Pages reactivated:",
+        "Pages purged:",
+        "File-backed pages:",
+        "Anonymous pages:",
+        "Pages stored in compressor:",
+        "Pages occupied by compressor:",
+        "Decompressions:",
+        "Compressions:",
+        "Pageins:",
+        "Pageouts:",
+        "Swapins:",
+        "Swapouts:",
+    };
+
+    char bytes_vals[NUM_STATS][32] = {0};
+    for (int i = 0; i < NUM_STATS; i++) {
+        format_bytes(bytes_nums[i], unit_mode, bytes_vals[i], sizeof(bytes_vals[i]));
+    }
+
+    int max_val_len = 0;
+    int max_label_len = 0;
+    for (int i = 0; i < NUM_STATS; i++) {
+        int val_len = strlen(bytes_vals[i]);
+        int label_len = strlen(labels[i]);
+        chmax(&max_val_len, val_len);
+        chmax(&max_label_len, label_len);
+    }
+    int width = max_label_len + max_val_len + 2;  // space for padding
+
+    for (int i = 0; i < NUM_STATS; i++) {
+        fputs(labels[i], stdout);
+        int spaces = width - (int)strlen(labels[i]) - (int)strlen(bytes_vals[i]);
+        for (int j = 0; j < spaces; j++) {
+            putchar(' ');
+        }
+        fputs(bytes_vals[i], stdout);
+        putchar('\n');
+    }
+    #undef NUM_STATS
+}
+
+void snapshot(const Config* cfg) {
     auto host_port = mach_host_self();
 
     auto page_size = get_page_size(host_port);
@@ -186,44 +297,14 @@ void snapshot() {
 
     auto mem_data = calc_memory_data(vm_stat);
 
-    auto mem_app_bytes = mem_data.app_pages * page_size;
-    auto mem_wired_bytes = mem_data.wired_pages * page_size;
-    auto mem_compressed_bytes = mem_data.compressed_pages * page_size;
-    auto mem_used_bytes = mem_app_bytes + mem_wired_bytes + mem_compressed_bytes;
-    auto mem_cached_bytes = mem_data.cached_pages * page_size;
-
     char buf[32];
-    puts("--- Mach Virtual Memory Statistics 2 ---");
-    puts_2col(35, "Total Memory:",   "%s         ", HUMANIZE_BYTES(total_memory, buf));
-    puts_2col(35, "Used Memory:",    "%s  (%4.1lf%%)", HUMANIZE_BYTES(mem_used_bytes, buf), (mem_used_bytes * 100.0) / total_memory);
-    puts_2col(35, "  App Memory:",   "%s  (%4.1lf%%)", HUMANIZE_BYTES(mem_app_bytes, buf), (mem_app_bytes * 100.0) / total_memory);
-    puts_2col(35, "  Wired Memory:", "%s  (%4.1lf%%)", HUMANIZE_BYTES(mem_wired_bytes, buf), (mem_wired_bytes * 100.0) / total_memory);
-    puts_2col(35, "  Compressed",    "%s  (%4.1lf%%)", HUMANIZE_BYTES(mem_compressed_bytes, buf), (mem_compressed_bytes * 100.0) / total_memory);
-    puts_2col(35, "Cached Files:",   "%s  (%4.1lf%%)", HUMANIZE_BYTES(mem_cached_bytes, buf), (mem_cached_bytes * 100.0) / total_memory);
-    puts_2col(35, "Swap Used:",      "%s         ",  HUMANIZE_BYTES(swap_used, buf));
-    puts("-----------------------------------------");
-    puts_2col(40, "Pages free:",                   HUMANIZE_BYTES((uint64_t)vm_stat.free_count * page_size, buf));
-    puts_2col(40, "Pages active:",                 HUMANIZE_BYTES((uint64_t)vm_stat.active_count * page_size, buf));
-    puts_2col(40, "Pages inactive:",               HUMANIZE_BYTES((uint64_t)vm_stat.inactive_count * page_size, buf));
-    puts_2col(40, "Pages speculative:",            HUMANIZE_BYTES((uint64_t)vm_stat.speculative_count * page_size, buf));
-    puts_2col(40, "Pages throttled:",              HUMANIZE_BYTES((uint64_t)vm_stat.throttled_count * page_size, buf));
-    puts_2col(40, "Pages wired down:",             HUMANIZE_BYTES((uint64_t)vm_stat.wire_count * page_size, buf));
-    puts_2col(40, "Pages purgeable:",              HUMANIZE_BYTES((uint64_t)vm_stat.purgeable_count * page_size, buf));
-    puts_2col(40, "\"Translation faults\":",       HUMANIZE_BYTES((uint64_t)vm_stat.faults * page_size, buf));
-    puts_2col(40, "Pages copy-on-write:",          HUMANIZE_BYTES((uint64_t)vm_stat.cow_faults * page_size, buf));
-    puts_2col(40, "Pages zero filled:",            HUMANIZE_BYTES((uint64_t)vm_stat.zero_fill_count * page_size, buf));
-    puts_2col(40, "Pages reactivated:",            HUMANIZE_BYTES((uint64_t)vm_stat.reactivations * page_size, buf));
-    puts_2col(40, "Pages purged:",                 HUMANIZE_BYTES((uint64_t)vm_stat.purges * page_size, buf));
-    puts_2col(40, "File-backed pages:",            HUMANIZE_BYTES((uint64_t)vm_stat.external_page_count * page_size, buf));
-    puts_2col(40, "Anonymous pages:",              HUMANIZE_BYTES((uint64_t)vm_stat.internal_page_count * page_size, buf));
-    puts_2col(40, "Pages stored in compressor:",   HUMANIZE_BYTES((uint64_t)vm_stat.total_uncompressed_pages_in_compressor * page_size, buf));
-    puts_2col(40, "Pages occupied by compressor:", HUMANIZE_BYTES((uint64_t)vm_stat.compressor_page_count * page_size, buf));
-    puts_2col(40, "Decompressions:",               HUMANIZE_BYTES((uint64_t)vm_stat.decompressions * page_size, buf));
-    puts_2col(40, "Compressions:",                 HUMANIZE_BYTES((uint64_t)vm_stat.compressions * page_size, buf));
-    puts_2col(40, "Pageins:",                      HUMANIZE_BYTES((uint64_t)vm_stat.pageins * page_size, buf));
-    puts_2col(40, "Pageouts:",                     HUMANIZE_BYTES((uint64_t)vm_stat.pageouts * page_size, buf));
-    puts_2col(40, "Swapins:",                      HUMANIZE_BYTES((uint64_t)vm_stat.swapins * page_size, buf));
-    puts_2col(40, "Swapouts:",                     HUMANIZE_BYTES((uint64_t)vm_stat.swapouts * page_size, buf));
+    format_bytes(page_size, cfg->unit_mode, buf, sizeof(buf));
+    printf("Mach Virtual Memory Statistics 2: (page size: %s)\n", buf);
+    puts_memory_data_as_table(mem_data, total_memory, swap_used, page_size, cfg->unit_mode);
+    if (cfg->show_all) {
+        puts_vm_statistics64_as_table(vm_stat, page_size, cfg->unit_mode);
+    }
+
     /*
     printf("Pages free:                   %lld\n", (uint64_t)vm_stat.free_count);
     printf("Pages active:                 %lld\n", (uint64_t)vm_stat.active_count);
@@ -275,7 +356,7 @@ int main(int argc, char* argv[]) {
     debug_print_config(&cfg);
 #endif
 
-    snapshot();
+    snapshot(&cfg);
 
     return 0;
 }
