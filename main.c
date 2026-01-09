@@ -26,10 +26,10 @@ typedef enum {
 } UnitMode;
 
 typedef struct {
-    UnitMode unit_mode;   // Unit mode (Auto, Byte, KB, MB, GB)
-    int interval;         // Interval in seconds (0 for snapshot mode)
-    int count;            // Number of times to poll
-    bool show_all;        // Show all details
+    UnitMode unit_mode;  // Unit mode (Auto, Byte, KB, MB, GB)
+    int interval;        // Interval in seconds (0 for snapshot mode)
+    int count;           // Number of times to poll
+    bool show_all;       // Show all details
 } Config;
 
 Config parse_args(int argc, char* argv[]) {
@@ -204,7 +204,7 @@ void puts_memory_data_as_table(MemoryData mem_data, uint64_t total_memory, uint6
     auto mem_cached_bytes = mem_data.cached_pages * page_size;
 
     char bytes_vals[7][32] = {0};
-    uint64_t bytes_nums[7] = { total_memory, mem_used_bytes, mem_app_bytes, mem_wired_bytes, mem_compressed_bytes, mem_cached_bytes, swap_used };
+    uint64_t bytes_nums[7] = {total_memory, mem_used_bytes, mem_app_bytes, mem_wired_bytes, mem_compressed_bytes, mem_cached_bytes, swap_used};
     for (int i = 0; i < 7; i++) {
         format_bytes(bytes_nums[i], unit_mode, bytes_vals[i], sizeof(bytes_vals[i]));
     }
