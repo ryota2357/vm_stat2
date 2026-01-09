@@ -1,7 +1,91 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <mach/mach.h>
 #include <sys/sysctl.h>
+
+void print_usage(const char* prog_name) {
+    fprintf(stderr, "Usage: %s [-b|-k|-m|-g] [-a] [[-c count] interval]\n", prog_name);
+    fprintf(stderr, "Options:\n");
+    fprintf(stderr, "  -b        Display values in bytes\n");
+    fprintf(stderr, "  -k        Display values in kilobytes\n");
+    fprintf(stderr, "  -m        Display values in megabytes\n");
+    fprintf(stderr, "  -g        Display values in gigabytes\n");
+    fprintf(stderr, "  -a        Show all details (verbose)\n");
+    fprintf(stderr, "  -c count  Number of times to poll\n");
+    fprintf(stderr, "  interval  Polling interval in seconds (enables polling mode)\n");
+}
+
+typedef enum {
+    UNIT_AUTO,
+    UNIT_BYTE,
+    UNIT_KB,
+    UNIT_MB,
+    UNIT_GB
+} UnitMode;
+
+typedef struct {
+    UnitMode unit_mode;   // Unit mode (Auto, Byte, KB, MB, GB)
+    int interval;         // Interval in seconds (0 for snapshot mode)
+    int count;            // Number of times to poll
+    bool show_all;        // Show all details
+} Config;
+
+Config parse_args(int argc, char* argv[]) {
+    Config cfg = {
+        .unit_mode = UNIT_AUTO,
+        .interval = 0,
+        .count = -1,
+        .show_all = false
+    };
+    int opt;
+    while ((opt = getopt(argc, argv, "bkmgac:")) != -1) {
+        switch (opt) {
+            case 'b':
+                cfg.unit_mode = UNIT_BYTE;
+                break;
+            case 'k':
+                cfg.unit_mode = UNIT_KB;
+                break;
+            case 'm':
+                cfg.unit_mode = UNIT_MB;
+                break;
+            case 'g':
+                cfg.unit_mode = UNIT_GB;
+                break;
+            case 'a':
+                cfg.show_all = true;
+                break;
+            case 'c':
+                cfg.count = atoi(optarg);
+                if (cfg.count <= 0) {
+                    fprintf(stderr, "Error: count must be positive\n");
+                    print_usage(argv[0]);
+                    exit(EXIT_FAILURE);
+                }
+                break;
+            default:
+                print_usage(argv[0]);
+                exit(EXIT_FAILURE);
+        }
+    }
+    if (optind < argc) {
+        cfg.interval = atoi(argv[optind]);
+    }
+    return cfg;
+}
+
+const char* unit_mode_to_string(UnitMode mode) {
+    switch (mode) {
+        case UNIT_AUTO: return "Auto";
+        case UNIT_BYTE: return "Byte";
+        case UNIT_KB:   return "KB";
+        case UNIT_MB:   return "MB";
+        case UNIT_GB:   return "GB";
+        default:        return "Unknown";
+    }
+}
 
 vm_size_t get_page_size(host_t host_port) {
     vm_size_t page_size;
@@ -176,7 +260,23 @@ void snapshot() {
     */
 }
 
-int main() {
+void debug_print_config(const Config* cfg) {
+    printf("[DEBUG] Config:\n");
+    printf("  unit_mode:   %s\n", unit_mode_to_string(cfg->unit_mode));
+    printf("  interval:    %d\n", cfg->interval);
+    printf("  count:       %d\n", cfg->count);
+    printf("  show_all:    %s\n", cfg->show_all ? "true" : "false");
+    printf("\n");
+}
+
+int main(int argc, char* argv[]) {
+    Config cfg = parse_args(argc, argv);
+
+#ifndef NDEBUG
+    debug_print_config(&cfg);
+#endif
+
     snapshot();
+
     return 0;
 }
