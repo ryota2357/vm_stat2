@@ -84,6 +84,8 @@ vm_stat2 -m -a
 - macOS
 - Clang compiler
 
+Tested on macOS 15 and 26.
+
 ## License
 
 [MIT](./LICENSE)
