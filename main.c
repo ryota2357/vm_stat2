@@ -226,7 +226,7 @@ void puts_memory_data_as_table(MemoryData mem_data, uint64_t total_memory, uint6
 void puts_vm_statistics64_as_table(vm_statistics64_data_t vm_stat, vm_size_t page_size, UnitMode unit_mode) {
     #define NUM_STATS 22
     uint64_t bytes_nums[NUM_STATS] = {
-        (uint64_t)vm_stat.free_count * page_size,
+        (uint64_t)(vm_stat.free_count - vm_stat.speculative_count) * page_size,
         (uint64_t)vm_stat.active_count * page_size,
         (uint64_t)vm_stat.inactive_count * page_size,
         (uint64_t)vm_stat.speculative_count * page_size,
@@ -368,7 +368,7 @@ void polling_loop(const Config* cfg) {
         auto swap_used = get_swap_used();
         auto mem_data = calc_memory_data(vm_stat);
 
-        uint64_t free_bytes = (uint64_t)vm_stat.free_count * page_size;
+        uint64_t free_bytes = (uint64_t)(vm_stat.free_count - vm_stat.speculative_count) * page_size;
         uint64_t app_bytes = mem_data.app_pages * page_size;
         uint64_t wired_bytes = mem_data.wired_pages * page_size;
         uint64_t compr_bytes = mem_data.compressed_pages * page_size;
