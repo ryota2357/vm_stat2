@@ -72,6 +72,17 @@ Config parse_args(int argc, char* argv[]) {
     }
     if (optind < argc) {
         cfg.interval = atoi(argv[optind]);
+        if (cfg.interval <= 0) {
+            fprintf(stderr, "Error: interval must be positive\n");
+            print_usage(argv[0]);
+            exit(EXIT_FAILURE);
+        }
+        // Check for extra arguments after interval (e.g., "vm_stat2 1 -c 3" is invalid)
+        if (optind + 1 < argc) {
+            fprintf(stderr, "Error: unexpected argument after interval\n");
+            print_usage(argv[0]);
+            exit(EXIT_FAILURE);
+        }
     }
     return cfg;
 }
