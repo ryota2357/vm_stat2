@@ -130,6 +130,9 @@ typedef struct {
 } MemoryData;
 
 MemoryData calc_memory_data(vm_statistics64_data_t vm_stat) {
+    // ref:
+    //  - https://qiita.com/hann-solo/items/3ef57d21b004bb66aadd
+    //  - https://songmu.jp/riji/entry/2015-05-08-mac-memory.html
     auto active = vm_stat.active_count;
     auto inactive = vm_stat.inactive_count;
     auto speculative = vm_stat.speculative_count;
