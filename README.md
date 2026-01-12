@@ -2,13 +2,6 @@
 
 A simple macOS command-line tool to display virtual memory statistics in a human-readable format. An enhanced alternative to the built-in `vm_stat` command.
 
-## Features
-
-- Human-readable memory statistics with percentage breakdowns
-- Customizable unit display (auto, bytes, KB, MB, GB)
-- Polling mode for continuous monitoring
-- Verbose mode for detailed information
-
 ## Installation
 
 ### Build from source
