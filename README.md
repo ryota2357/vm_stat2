@@ -112,7 +112,7 @@ Swapouts:                           0.00 MB
 ## Requirements
 
 - macOS
-- Clang compiler
+- Clang compiler (If building from source)
 
 Tested on macOS 15 and 26.
 
