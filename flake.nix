@@ -1,14 +1,18 @@
 {
   description = "vm_stat2: An improved vm_stat command for macOS";
 
-  inputs.nixpkgs.url = "github:nixos/nixpkgs?ref=nixpkgs-unstable";
+  inputs.nixpkgs.url = "github:nixos/nixpkgs?ref=nixpkgs-25.11-darwin";
 
   outputs =
     { self, nixpkgs }:
     let
       mk_vm_stat2 =
         pkgs:
-        pkgs.stdenv.mkDerivation (finalAttrs: {
+        let
+          stdenv = pkgs.stdenv;
+          lib = pkgs.lib;
+        in
+        stdenv.mkDerivation (finalAttrs: {
           name = "vm_stat2";
           src = pkgs.lib.cleanSource ./.;
           makeFlags = [ "CC=${pkgs.stdenv.cc.targetPrefix}cc" ];
@@ -29,6 +33,10 @@
             make test
             runHook postCheck
           '';
+          meta = {
+            license = lib.licenses.mit;
+            mainProgram = "vm_stat2";
+          };
         });
     in
     {
