@@ -14,7 +14,7 @@ test: $(BUILD_DIR)/vm_stat2
 	@bash test.sh $(BUILD_DIR)/vm_stat2
 
 $(BUILD_DIR)/vm_stat2: main.c | $(BUILD_DIR)
-	@$(CC) -o $@ $< $(CFLAGS) -O2 -DNDEBUG
+	@$(CC) -o $@ $< $(CFLAGS) -O2 -flto -DNDEBUG
 
 $(BUILD_DIR)/vm_stat2-dev: main.c | $(BUILD_DIR)
 	@$(CC) -o $@ $< $(CFLAGS) -g -O0
