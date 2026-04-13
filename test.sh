@@ -11,79 +11,79 @@ GREEN='\033[0;32m'
 NC='\033[0m'
 
 pass() {
-    echo -e "${GREEN}PASS${NC}: $1"
-    PASSED=$((PASSED + 1))
+  echo -e "${GREEN}PASS${NC}: $1"
+  PASSED=$((PASSED + 1))
 }
 
 fail() {
-    echo -e "${RED}FAIL${NC}: $1"
-    echo "  Expected: $2"
-    echo "  Got:      $3"
-    FAILED=$((FAILED + 1))
+  echo -e "${RED}FAIL${NC}: $1"
+  echo "  Expected: $2"
+  echo "  Got:      $3"
+  FAILED=$((FAILED + 1))
 }
 
 test_success() {
-    local desc="$1"
-    shift
-    if "$VM_STAT2" "$@" > /dev/null 2>&1; then
-        pass "$desc"
-    else
-        fail "$desc" "exit 0" "exit $?"
-    fi
+  local desc="$1"
+  shift
+  if "$VM_STAT2" "$@" > /dev/null 2>&1; then
+    pass "$desc"
+  else
+    fail "$desc" "exit 0" "exit $?"
+  fi
 }
 
 test_failure() {
-    local desc="$1"
-    shift
-    if "$VM_STAT2" "$@" > /dev/null 2>&1; then
-        fail "$desc" "exit non-zero" "exit 0"
-    else
-        pass "$desc"
-    fi
+  local desc="$1"
+  shift
+  if "$VM_STAT2" "$@" > /dev/null 2>&1; then
+    fail "$desc" "exit non-zero" "exit 0"
+  else
+    pass "$desc"
+  fi
 }
 
 test_output_contains() {
-    local desc="$1"
-    local expected="$2"
-    shift 2
-    local output
-    output=$("$VM_STAT2" "$@" 2>&1) || true
-    if echo "$output" | grep -q "$expected"; then
-        pass "$desc"
-    else
-        fail "$desc" "output contains '$expected'" "output: $output"
-    fi
+  local desc="$1"
+  local expected="$2"
+  shift 2
+  local output
+  output=$("$VM_STAT2" "$@" 2>&1) || true
+  if echo "$output" | grep -q "$expected"; then
+    pass "$desc"
+  else
+    fail "$desc" "output contains '$expected'" "output: $output"
+  fi
 }
 
 test_output_matches_regex() {
-    local desc="$1"
-    local regex="$2"
-    shift 2
-    local output
-    output=$("$VM_STAT2" "$@" 2>&1) || true
-    if echo "$output" | grep -Eq "$regex"; then
-        pass "$desc"
-    else
-        fail "$desc" "output matches regex: $regex" "output: $output"
-    fi
+  local desc="$1"
+  local regex="$2"
+  shift 2
+  local output
+  output=$("$VM_STAT2" "$@" 2>&1) || true
+  if echo "$output" | grep -Eq "$regex"; then
+    pass "$desc"
+  else
+    fail "$desc" "output matches regex: $regex" "output: $output"
+  fi
 }
 
 test_stderr_contains() {
-    local desc="$1"
-    local expected="$2"
-    shift 2
-    local stderr_output
-    stderr_output=$("$VM_STAT2" "$@" 2>&1 >/dev/null) || true
-    if echo "$stderr_output" | grep -q "$expected"; then
-        pass "$desc"
-    else
-        fail "$desc" "stderr contains '$expected'" "stderr: $stderr_output"
-    fi
+  local desc="$1"
+  local expected="$2"
+  shift 2
+  local stderr_output
+  stderr_output=$("$VM_STAT2" "$@" 2>&1 >/dev/null) || true
+  if echo "$stderr_output" | grep -q "$expected"; then
+    pass "$desc"
+  else
+    fail "$desc" "stderr contains '$expected'" "stderr: $stderr_output"
+  fi
 }
 
 group() {
-    echo ""
-    echo "--- $1 ---"
+  echo ""
+  echo "--- $1 ---"
 }
 echo "Testing: $VM_STAT2"
 
@@ -158,6 +158,6 @@ group "Combined Options"
 echo -e "\nResults: ${GREEN}${PASSED} passed${NC}, ${RED}${FAILED} failed${NC}"
 
 if [ $FAILED -gt 0 ]; then
-    exit 1
+  exit 1
 fi
 exit 0
