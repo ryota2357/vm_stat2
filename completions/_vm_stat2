@@ -1,0 +1,10 @@
+#compdef vm_stat2
+
+_arguments -s \
+  '(-k -m -g)-b[Display values in bytes]' \
+  '(-b -m -g)-k[Display values in kilobytes]' \
+  '(-b -k -g)-m[Display values in megabytes]' \
+  '(-b -k -m)-g[Display values in gigabytes]' \
+  '-a[Show all details (verbose)]' \
+  '-c[Number of times to poll]:count:' \
+  '*:interval (seconds):'

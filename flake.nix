@@ -15,11 +15,16 @@
         stdenv.mkDerivation (finalAttrs: {
           name = "vm_stat2";
           src = pkgs.lib.cleanSource ./.;
+          nativeBuildInputs = [ pkgs.installShellFiles ];
           makeFlags = [ "CC=${pkgs.stdenv.cc.targetPrefix}cc" ];
           installPhase = ''
             runHook preInstall
             mkdir -p $out/bin
             cp build/vm_stat2 $out/bin/
+            installShellCompletion --cmd vm_stat2 \
+              --bash completions/vm_stat2.bash \
+              --zsh  completions/_vm_stat2 \
+              --fish completions/vm_stat2.fish
             runHook postInstall
           '';
           doCheck = true;
