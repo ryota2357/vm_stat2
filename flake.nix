@@ -16,11 +16,6 @@
           name = "vm_stat2";
           src = pkgs.lib.cleanSource ./.;
           makeFlags = [ "CC=${pkgs.stdenv.cc.targetPrefix}cc" ];
-          buildPhase = ''
-            runHook preBuild
-            make
-            runHook postBuild
-          '';
           installPhase = ''
             runHook preInstall
             mkdir -p $out/bin
@@ -28,11 +23,6 @@
             runHook postInstall
           '';
           doCheck = true;
-          checkPhase = ''
-            runHook preCheck
-            make test
-            runHook postCheck
-          '';
           meta = {
             license = lib.licenses.mit;
             mainProgram = "vm_stat2";
